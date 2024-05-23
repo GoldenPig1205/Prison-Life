@@ -240,7 +240,7 @@ namespace Prison_Life
         public Dictionary<string, int> Free = new Dictionary<string, int>(); // ID, 범죄 죄수를 죽인 횟수
         public List<string> Ishealing = new List<string>();
         public List<string> IsOutside = new List<string>();
-        public List<string> SWAT_PASS = new List<string>() { "76561198814547743@steam" };
+        public List<string> SWAT_PASS = new List<string>() { "76561198447505804@steam", "76561198814547743@steam" };
 
         public override void OnEnabled()
         {
@@ -693,11 +693,9 @@ namespace Prison_Life
             {
                 if (ev.Item.Type == ItemType.GunCOM18)
                 {
-                    byte ammo = ev.Item.As<Exiled.API.Features.Items.Firearm>().Ammo;
-
-                    if (ammo > 1)
+                    if (ev.Item.As<Exiled.API.Features.Items.Firearm>().Ammo > 1)
                     {
-                        ammo = 1;
+                        ev.Item.As<Exiled.API.Features.Items.Firearm>().Ammo = 1;
                     }
                 }
             }
@@ -729,7 +727,6 @@ namespace Prison_Life
             ItemType[] SItems = { ItemType.GunE11SR };
             ItemType[] Armors = { ItemType.ArmorLight, ItemType.ArmorCombat, ItemType.ArmorHeavy };
 
-
             if (Blacks.Contains(ev.Pickup.Type))
             {
                 ev.IsAllowed = false;
@@ -738,7 +735,7 @@ namespace Prison_Life
 
             if (Ammos.Contains(ev.Pickup.Type))
             {
-                if (ev.Player.Ammo[ev.Pickup.Type] > 10)
+                if (ev.Player.Ammo.Keys.Contains(ev.Pickup.Type) && ev.Player.Ammo[ev.Pickup.Type] > 300)
                 {
                     ev.IsAllowed = false;
                     return;
@@ -776,20 +773,26 @@ namespace Prison_Life
                 }
                 else
                 {
-                    ev.Player.ShowHint($"SWAT 패스 특전 전용입니다.", 3);
+                    ev.Player.ShowHint($"SWAT 패스 특전 전용입니다.", 1);
                 }
             }
             else if (ev.Pickup.Type == ItemType.ArmorHeavy)
             {
-                if (SWAT_PASS.Contains(ev.Player.UserId) && Wander.Keys.Contains(ev.Player.UserId))
-                {
-                    ev.Player.Role.Set(PlayerRoles.RoleTypeId.NtfPrivate, Exiled.API.Enums.SpawnReason.ForceClass, 0);
-                    Server.ExecuteCommand($"/setgroup {ev.Player.Id} swat");
-                    ev.Player.AddItem(ev.Pickup.Type);
+                if (SWAT_PASS.Contains(ev.Player.UserId))
+                {   if (Wander.Keys.Contains(ev.Player.UserId))
+                    {
+                        ev.Player.Role.Set(PlayerRoles.RoleTypeId.NtfPrivate, Exiled.API.Enums.SpawnReason.ForceClass, 0);
+                        Server.ExecuteCommand($"/setgroup {ev.Player.Id} swat");
+                        ev.Player.AddItem(ev.Pickup.Type);
+                    }
+                    else
+                    {
+                        ev.Player.ShowHint($"방탄복까지 습득하려고 하다니, 욕심쟁이!", 1);
+                    }
                 }
                 else
                 {
-                    ev.Player.ShowHint($"SWAT 패스 특전 전용입니다.", 3);
+                    ev.Player.ShowHint($"SWAT 패스 특전 전용입니다.", 1);
                 }
             }
             else
