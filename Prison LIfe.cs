@@ -693,9 +693,11 @@ namespace Prison_Life
             {
                 if (ev.Item.Type == ItemType.GunCOM18)
                 {
-                    if (ev.Item.As<Exiled.API.Features.Items.Firearm>().Ammo > 1)
+                    byte ammo = ev.Item.As<Exiled.API.Features.Items.Firearm>().Ammo;
+
+                    if (ammo > 1)
                     {
-                        ev.Item.As<Exiled.API.Features.Items.Firearm>().Ammo = 1;
+                        ammo = 1;
                     }
                 }
             }
