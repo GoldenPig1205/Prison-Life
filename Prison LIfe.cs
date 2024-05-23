@@ -240,7 +240,7 @@ namespace Prison_Life
         public Dictionary<string, int> Free = new Dictionary<string, int>(); // ID, 범죄 죄수를 죽인 횟수
         public List<string> Ishealing = new List<string>();
         public List<string> IsOutside = new List<string>();
-        public List<string> SWAT_PASS = new List<string>() { "76561198447505804@steam", "76561198814547743@steam" };
+        public List<string> SWAT_PASS = new List<string>() { "76561198814547743@steam" };
 
         public override void OnEnabled()
         {
@@ -700,13 +700,6 @@ namespace Prison_Life
                         ammo = 1;
                     }
                 }
-                if (ev.Item.IsAmmo)
-                {
-                    if (ev.Player.Ammo[ev.Item.Type] > 100)
-                    {
-                        ev.IsAllowed = false;
-                    }
-                }
             }
             catch (Exception ex)
             {
@@ -736,10 +729,19 @@ namespace Prison_Life
             ItemType[] SItems = { ItemType.GunE11SR };
             ItemType[] Armors = { ItemType.ArmorLight, ItemType.ArmorCombat, ItemType.ArmorHeavy };
 
+
             if (Blacks.Contains(ev.Pickup.Type))
             {
                 ev.IsAllowed = false;
                 return;
+            }
+
+            if (Ammos.Contains(ev.Pickup.Type))
+            {
+                if (ev.Player.Ammo[ev.Pickup.Type] > 100)
+                {
+                    ev.IsAllowed = false;
+                }
             }
 
             if (ev.Player.HasItem(ev.Pickup.Type) && !Ammos.Contains(ev.Pickup.Type))
@@ -771,6 +773,10 @@ namespace Prison_Life
                 {
                     ev.Player.AddItem(ev.Pickup.Type);
                 }
+                else
+                {
+                    ev.Player.ShowHint($"SWAT 패스 특전 전용입니다.", 3);
+                }
             }
             else if (ev.Pickup.Type == ItemType.ArmorHeavy)
             {
@@ -779,6 +785,10 @@ namespace Prison_Life
                     ev.Player.Role.Set(PlayerRoles.RoleTypeId.NtfPrivate, Exiled.API.Enums.SpawnReason.ForceClass, 0);
                     Server.ExecuteCommand($"/setgroup {ev.Player.Id} swat");
                     ev.Player.AddItem(ev.Pickup.Type);
+                }
+                else
+                {
+                    ev.Player.ShowHint($"SWAT 패스 특전 전용입니다.", 3);
                 }
             }
             else
