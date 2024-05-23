@@ -801,14 +801,18 @@ namespace Prison_Life
             }
         }
 
-        public void OnDroppingItem(Exiled.Events.EventArgs.Player.DroppingItemEventArgs ev)
+        public async void OnDroppingItem(Exiled.Events.EventArgs.Player.DroppingItemEventArgs ev)
         {
-            ev.IsAllowed = false;
+            await Task.Delay(10000);
+
+            ev.Item.Destroy();
         }
 
-        public void OnDroppingAmmo(Exiled.Events.EventArgs.Player.DroppingAmmoEventArgs ev)
+        public async void OnDroppingAmmo(Exiled.Events.EventArgs.Player.DroppingAmmoEventArgs ev)
         {
-            ev.IsAllowed = false;
+            await Task.Delay(10000);
+
+            ev.Amount = 0;
         }
 
         public async void BornPrison(Exiled.Events.EventArgs.Player.DyingEventArgs ev)
