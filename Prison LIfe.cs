@@ -738,9 +738,10 @@ namespace Prison_Life
 
             if (Ammos.Contains(ev.Pickup.Type))
             {
-                if (ev.Player.Ammo[ev.Pickup.Type] > 100)
+                if (ev.Player.Ammo[ev.Pickup.Type] > 10)
                 {
                     ev.IsAllowed = false;
+                    return;
                 }
             }
 
