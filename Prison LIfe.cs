@@ -700,6 +700,13 @@ namespace Prison_Life
                         ammo = 1;
                     }
                 }
+                if (ev.Item.IsAmmo)
+                {
+                    if (ev.Player.Ammo[ev.Item.Type] > 100)
+                    {
+                        ev.IsAllowed = false;
+                    }
+                }
             }
             catch (Exception ex)
             {
