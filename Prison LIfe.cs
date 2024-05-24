@@ -798,6 +798,9 @@ namespace Prison_Life
             else
             {
                 ev.Player.AddItem(ev.Pickup.Type);
+
+                if (ev.Pickup.PreviousOwner != null)
+                    ev.Pickup.Destroy();
             }
         }
 
