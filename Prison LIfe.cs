@@ -438,7 +438,11 @@ namespace Prison_Life
 
         public async void OnHurting(Exiled.Events.EventArgs.Player.HurtingEventArgs ev)
         {
-            if (ev.Attacker != ev.Player)
+            if (ev.DamageHandler.IsSuicide)
+            {
+                ev.IsAllowed = false;
+            }
+            else if (ev.Attacker != ev.Player)
             {
                 try
                 {
@@ -455,9 +459,9 @@ namespace Prison_Life
 
                         if (!Wander.Keys.Contains(ev.Player.UserId))
                         {
-                            ev.Player.EnableEffect(Exiled.API.Enums.EffectType.Ensnared, 3f);
+                            ev.Player.EnableEffect(Exiled.API.Enums.EffectType.Ensnared, 5f);
 
-                            foreach (var i in System.Linq.Enumerable.Range(1, 30))
+                            foreach (var i in System.Linq.Enumerable.Range(1, 50))
                             {
                                 ev.Player.CurrentItem = null;
                                 await Task.Delay(100);
@@ -591,15 +595,6 @@ namespace Prison_Life
                     if (IsOutside.Contains(ev.Player.UserId))
                         IsOutside.Remove(ev.Player.UserId);
                 }
-
-                if (Free.Keys.Contains(ev.Player.UserId))
-                {
-                    if (Wander.Keys.Contains(ev.Attacker.UserId))
-                    {
-                        Free.Remove(ev.Player.UserId);
-                        Prison.Add(ev.Player.UserId, false);
-                    }
-                }
             }
 
             await Task.Delay(10);
@@ -672,6 +667,22 @@ namespace Prison_Life
                     }
                     ev.Target.Kill("교도관에 의해 체포당했습니다.");
                 }
+                else if (Free.Keys.Contains(ev.Target.UserId))
+                {
+                    if (Wander.Keys.Contains(ev.Player.UserId))
+                    {
+                        Free.Remove(ev.Target.UserId);
+                        Prison.Add(ev.Target.UserId, false);
+
+                        ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Ensnared);
+                        for (int i = 1; i < 5; i++)
+                        {
+                            ev.Target.ShowHint($"{5 - i}초 후 투옥됩니다.", 1);
+                            await Task.Delay(1000);
+                        }
+                        ev.Target.Kill("교도관에 의해 체포당했습니다.");
+                    }
+                }
             }
         }
 
@@ -679,14 +690,7 @@ namespace Prison_Life
         {
             if (ev.Item.Type == ItemType.GunCOM18)
             {
-                if (ev.Firearm.Ammo > 0)
-                {
-                    ev.IsAllowed = false;
-                }
-                else
-                {
-                    ev.Firearm.MaxAmmo = 1;
-                }
+                ev.IsAllowed = false;
             }
         }
 
@@ -696,9 +700,9 @@ namespace Prison_Life
             {
                 if (ev.Item.Type == ItemType.GunCOM18)
                 {
-                    if (ev.Item.As<Exiled.API.Features.Items.Firearm>().Ammo > 1)
+                    if (ev.Item.As<Exiled.API.Features.Items.Firearm>().Ammo > 2)
                     {
-                        ev.Item.As<Exiled.API.Features.Items.Firearm>().Ammo = 1;
+                        ev.Item.As<Exiled.API.Features.Items.Firearm>().Ammo = 2;
                     }
                 }
             }
