@@ -7,6 +7,7 @@ using Exiled.API.Features;
 using Exiled.Events.EventArgs.Player;
 using UnityEngine;
 using PlayerRoles.FirstPersonControl;
+using MEC;
 
 namespace Prison_Life
 {
@@ -250,7 +251,7 @@ namespace Prison_Life
             Exiled.Events.Handlers.Server.RoundStarted += OnRoundStart;
 
             Exiled.Events.Handlers.Player.Verified += OnVerifed;
-            Exiled.Events.Handlers.Player.DroppingItem += OnDroppingItem;
+            Exiled.Events.Handlers.Player.DroppedItem += OnDroppedItem;
             Exiled.Events.Handlers.Player.Dying += OnDying;
             Exiled.Events.Handlers.Player.Handcuffing += OnHandcuffing;
             Exiled.Events.Handlers.Player.ItemAdded += OnItemAdded;
@@ -274,7 +275,7 @@ namespace Prison_Life
             Exiled.Events.Handlers.Server.RoundStarted -= OnRoundStart;
 
             Exiled.Events.Handlers.Player.Verified -= OnVerifed;
-            Exiled.Events.Handlers.Player.DroppingItem -= OnDroppingItem;
+            Exiled.Events.Handlers.Player.DroppedItem -= OnDroppedItem;
             Exiled.Events.Handlers.Player.Dying -= OnDying;
             Exiled.Events.Handlers.Player.Handcuffing -= OnHandcuffing;
             Exiled.Events.Handlers.Player.ItemAdded -= OnItemAdded;
@@ -738,14 +739,9 @@ namespace Prison_Life
                 if (ev.Player.Ammo.Keys.Contains(ev.Pickup.Type) && ev.Player.Ammo[ev.Pickup.Type] > 300)
                 {
                     ev.IsAllowed = false;
+                    ev.Player.Ammo[ev.Pickup.Type] = 300;
                     return;
                 }
-            }
-
-            if (ev.Player.HasItem(ev.Pickup.Type) && !Ammos.Contains(ev.Pickup.Type))
-            {
-                ev.IsAllowed = false;
-                return;
             }
 
             foreach (var Armor in Armors)
@@ -797,25 +793,21 @@ namespace Prison_Life
             }
             else
             {
-                ev.Player.AddItem(ev.Pickup.Type);
-
-                if (ev.Pickup.PreviousOwner != null)
-                    ev.Pickup.Destroy();
+                if (ev.Pickup.PreviousOwner == null)
+                    ev.Player.AddItem(ev.Pickup.Type);
             }
         }
 
-        public async void OnDroppingItem(Exiled.Events.EventArgs.Player.DroppingItemEventArgs ev)
+        public async void OnDroppedItem(Exiled.Events.EventArgs.Player.DroppedItemEventArgs ev)
         {
             await Task.Delay(10000);
 
-            ev.Item.Destroy();
+            ev.Pickup.Destroy();
         }
 
-        public async void OnDroppingAmmo(Exiled.Events.EventArgs.Player.DroppingAmmoEventArgs ev)
+        public void OnDroppingAmmo(Exiled.Events.EventArgs.Player.DroppingAmmoEventArgs ev)
         {
-            await Task.Delay(10000);
-
-            ev.Amount = 0;
+            ev.IsAllowed = false;
         }
 
         public async void BornPrison(Exiled.Events.EventArgs.Player.DyingEventArgs ev)

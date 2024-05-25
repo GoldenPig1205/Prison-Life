@@ -144,6 +144,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
+    <Compile Include="Prison Life.Commands.cs" />
     <Compile Include="Prison LIfe.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
