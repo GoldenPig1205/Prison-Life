@@ -96,7 +96,7 @@ namespace Prison_Life
                     }
                     else
                     {
-                        if (pl.Wander.Keys.Count() > Server.PlayerCount / 2)
+                        if (pl.Wander.Keys.Count() >= Server.PlayerCount / 2)
                         {
                             player.ShowHint("교도관의 수가 너무 많습니다!", 3);
                         }
@@ -455,7 +455,7 @@ namespace Prison_Life
 
                         if (!Wander.Keys.Contains(ev.Player.UserId))
                         {
-                            ev.Player.EnableEffect(Exiled.API.Enums.EffectType.Ensnared, 1.5f);
+                            ev.Player.EnableEffect(Exiled.API.Enums.EffectType.Ensnared, 3f);
 
                             foreach (var i in System.Linq.Enumerable.Range(1, 30))
                             {
