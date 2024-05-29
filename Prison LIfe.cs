@@ -408,15 +408,15 @@ namespace Prison_Life
 
         public async void OnVerifed(Exiled.Events.EventArgs.Player.VerifiedEventArgs ev)
         {
-            gtool.hits.Add(new Hit { player = ev.Player });
-            HealingCooldown.Add(ev.Player.UserId, 0);
-
             if (Wander.Keys.Contains(ev.Player.UserId) || Prison.Keys.Contains(ev.Player.UserId) || Free.Keys.Contains(ev.Player.UserId))
             {
                 ev.Player.Kill("곧 재생성됩니다, 준비하세요!");
             }
             else
             {
+                gtool.hits.Add(new Hit { player = ev.Player });
+                HealingCooldown.Add(ev.Player.UserId, 0);
+
                 ev.Player.Role.Set(PlayerRoles.RoleTypeId.Tutorial);
                 ev.Player.EnableEffect(Exiled.API.Enums.EffectType.Invisible);
                 ev.Player.Position = new Vector3(142.3191f, 901.505f, -462.5307f);
