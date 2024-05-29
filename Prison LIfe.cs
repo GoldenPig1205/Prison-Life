@@ -64,7 +64,7 @@ namespace Prison_Life
 
             if (Physics.Raycast(player.Position, Vector3.down, out RaycastHit hit, 1, (LayerMask)1))
             {
-                string pos = hit.collider.name;
+                string pos = hit.transform.parent.name;
                 string[] cz = { "GuardRoom", "Kitchen", "Yard", "Outside Hole", "Elevator to Outside" };
 
                 if (pos == "SpawnFree")
@@ -238,12 +238,15 @@ namespace Prison_Life
         public List<string> Owner = new List<string>() { "76561198447505804@steam" };
         public List<string> Admin = new List<string>();
 
+        public List<string> IsOutside = new List<string>();
+        public List<string> SWAT_PASS = new List<string>() { "76561198447505804@steam", "76561198814547743@steam" };
+
         public Dictionary<string, bool> Prison = new Dictionary<string, bool>(); // ID, 범죄 여부
         public Dictionary<string, int> Wander = new Dictionary<string, int>(); // ID, 무고 죄수를 죽인 횟수
         public Dictionary<string, int> Free = new Dictionary<string, int>(); // ID, 범죄 죄수를 죽인 횟수
-        public List<string> Ishealing = new List<string>();
-        public List<string> IsOutside = new List<string>();
-        public List<string> SWAT_PASS = new List<string>() { "76561198447505804@steam", "76561198814547743@steam" };
+
+        public Dictionary<string, int> HealingCooldown = new Dictionary<string, int>(); // ID, 힐 쿨타임
+        public Dictionary<string, object> Backups = new Dictionary<string, object>(); // ID, 정보 (클래스, 위치, 인벤토리)
 
         public override void OnEnabled()
         {
@@ -265,6 +268,7 @@ namespace Prison_Life
             Exiled.Events.Handlers.Player.SearchingPickup += OnSearchingPickup;
             Exiled.Events.Handlers.Player.ChangingItem += OnChangingItem;
             Exiled.Events.Handlers.Player.ReloadingWeapon += OnReloadingWeapon;
+            Exiled.Events.Handlers.Player.ChangingGroup += OnChangingGroupEventArgs;
 
             Exiled.Events.Handlers.Item.ChargingJailbird += OnChargingJailbird;
 
@@ -289,6 +293,7 @@ namespace Prison_Life
             Exiled.Events.Handlers.Player.SearchingPickup -= OnSearchingPickup;
             Exiled.Events.Handlers.Player.ChangingItem -= OnChangingItem;
             Exiled.Events.Handlers.Player.ReloadingWeapon -= OnReloadingWeapon;
+            Exiled.Events.Handlers.Player.ChangingGroup -= OnChangingGroupEventArgs;
 
             Exiled.Events.Handlers.Item.ChargingJailbird -= OnChargingJailbird;
 
@@ -350,21 +355,50 @@ namespace Prison_Life
                 }
         }
 
-        public void OnWaitingForPlayers()
+        public async void OnWaitingForPlayers()
         {
-            Server.ExecuteCommand("/roundlock enable");
-            Server.ExecuteCommand("/setconfig friendly_fire true");
+            Round.IsLocked = true;
+            Server.FriendlyFire = true;
             Server.ExecuteCommand("/decontamination disable");
-            Server.ExecuteCommand("/forcestart");
+            Round.Start();
 
+            while (true)
+            {
+                DateTime now = DateTime.Now;
+                if (now.Hour == 0)
+                {
+                    Server.ExecuteCommand($"sr");
+                }
+
+                await Task.Delay(3600);
+            }
         }
 
-        public void OnRoundStart()
+        public async void OnRoundStart()
         {
             Server.ExecuteCommand("/mp load PL");
 
             GameObject gameobject = GameObject.Instantiate(new GameObject());
             gtool = gameobject.AddComponent<Gtool>();
+
+            while (true)
+            {
+                foreach (var player in Player.List)
+                {
+                    Backups[player.UserId] = new List<object>() { player.Role.Type, $"{player.Position.x} {player.Position.y} {player.Position.z}", player.Inventory };
+
+                    if (HealingCooldown[player.UserId] <= 0)
+                    {
+                        player.Heal(10);
+                    }
+                    else
+                    {
+                        HealingCooldown[player.UserId] -= 1;
+                    }
+                }
+
+                await Task.Delay(1000);
+            }
         }
 
         public void OnPlacingBulletHole(Exiled.Events.EventArgs.Map.PlacingBulletHoleEventArgs ev)
@@ -375,6 +409,7 @@ namespace Prison_Life
         public async void OnVerifed(Exiled.Events.EventArgs.Player.VerifiedEventArgs ev)
         {
             gtool.hits.Add(new Hit { player = ev.Player });
+            HealingCooldown.Add(ev.Player.UserId, 0);
 
             if (Wander.Keys.Contains(ev.Player.UserId) || Prison.Keys.Contains(ev.Player.UserId) || Free.Keys.Contains(ev.Player.UserId))
             {
@@ -384,8 +419,8 @@ namespace Prison_Life
             {
                 ev.Player.Role.Set(PlayerRoles.RoleTypeId.Tutorial);
                 ev.Player.EnableEffect(Exiled.API.Enums.EffectType.Invisible);
-                Server.ExecuteCommand($"/tp {ev.Player.Id} 141.3819 901.46 -462.6135");
-                Server.ExecuteCommand($"/setgroup {ev.Player.Id} mid");
+                ev.Player.Position = new Vector3(142.3191f, 901.505f, -462.5307f);
+                ev.Player.Group = new UserGroup { BadgeText = "중립", BadgeColor = "white" };
 
                 ev.Player.ShowHint($"<b><size=40><size=50>[<color=#A4A4A4>교도관</color>]</size>\n<mark=#A4A4A4aa>수감자들을 잘 감시하세요. 불법 반입 물품 압수, 폭동 진압, 무엇보다도 탈옥 시도를 저지해야 합니다. 하지만 감옥을 위협하는 것이 죄수뿐만은 아니라는 것, 명심하세요.</mark>\n\n" +
                     $"<size=50>[<color=#FF8000>수감자</color>]</size>\n<mark=#FF8000aa>가석방이 없는 종신형을 받은 무고한 시민인 당신, 어떤 희망도 미래도 보이지 않습니다. 지금 당신은 갈림길에 서있습니다. 평생 추운 감옥에 갇혀 의미 없는 나날을 보낼 것인가, 아니면 탈옥할 것인가...</mark></size></b>\n\n\n" +
@@ -408,20 +443,30 @@ namespace Prison_Life
             ServerConsole.AddLog($"{ev.Player.Nickname} - {ev.Player.Position.x} {ev.Player.Position.y} {ev.Player.Position.z}", color:ConsoleColor.DarkMagenta);
         }
 
-        public async void OnChangingRole(Exiled.Events.EventArgs.Player.ChangingRoleEventArgs ev)
+        public void OnChangingRole(Exiled.Events.EventArgs.Player.ChangingRoleEventArgs ev)
         {
             Server.ExecuteCommand($"/remotecommand {ev.Player.Id} showtag");
+        }
 
-            Player.List.ToList().ForEach(x => x.DisableEffect(Exiled.API.Enums.EffectType.FogControl));
-            await Task.Delay(1);
-            Player.List.ToList().ForEach(x => x.EnableEffect(Exiled.API.Enums.EffectType.FogControl));
+        public async void OnChangingGroupEventArgs(Exiled.Events.EventArgs.Player.ChangingGroupEventArgs ev)
+        {
+            await Task.Delay(10);
+
+            if (Owner.Contains(ev.Player.UserId))
+            {
+                if (ev.Player.Group.KickPower != 255)
+                {
+                    UserGroup owner = new UserGroup() { BadgeText = ev.Player.Group.BadgeText, BadgeColor = ev.Player.Group.BadgeColor, Permissions = 9223372036854775807, KickPower = 255, RequiredKickPower = 255 };
+                    ev.Player.Group = owner;
+                }
+            }
         }
 
         public void Onjumping(Exiled.Events.EventArgs.Player.JumpingEventArgs ev) 
         {
             if (Physics.Raycast(ev.Player.Position, Vector3.down, out RaycastHit hit, 1, (LayerMask)1))
             {
-                if (hit.transform.parent.name == "toilet" && ev.Player.CurrentItem.Type == ItemType.Jailbird)
+                if (hit.transform.parent.parent.name == "toilet" && ev.Player.CurrentItem.Type == ItemType.Jailbird)
                 {
                     if (UnityEngine.Random.Range(1, 20) == 1)
                     {
@@ -438,10 +483,11 @@ namespace Prison_Life
 
         public async void OnHurting(Exiled.Events.EventArgs.Player.HurtingEventArgs ev)
         {
-            if (ev.DamageHandler.IsSuicide)
+            if (ev.Attacker == ev.Player || ev.DamageHandler.Type == Exiled.API.Enums.DamageType.Falldown)
             {
                 ev.IsAllowed = false;
             }
+
             else if (ev.Attacker != ev.Player)
             {
                 try
@@ -474,6 +520,10 @@ namespace Prison_Life
                 catch (Exception ex)
                 {
 
+                }
+                finally 
+                {
+                    HealingCooldown[ev.Player.UserId] = 5;
                 }
             }
         }
@@ -569,9 +619,9 @@ namespace Prison_Life
 
                 if (Wander.Keys.Contains(ev.Player.UserId))
                 {
-                    string[] random_items = { "5", "13" };
-                    string drop_item = random_items[new System.Random().Next(random_items.Length)];
-                    Server.ExecuteCommand($"/drop {ev.Player.Id} {drop_item} 1");
+                    ushort[] random_items = { 5, 13 };
+                    ushort drop_item = random_items[new System.Random().Next(random_items.Length)];
+                    ev.Player.DropItem(Exiled.API.Features.Items.Item.Get(drop_item));
                 }
 
                 if (Prison.Keys.Contains(ev.Player.UserId))
@@ -599,11 +649,11 @@ namespace Prison_Life
 
             await Task.Delay(10);
             ev.Player.ClearInventory();
-            Server.ExecuteCommand($"/cleanup ragdolls");
+            Map.CleanAllRagdolls();
 
             ev.Player.Role.Set(PlayerRoles.RoleTypeId.Tutorial);
             ev.Player.EnableEffect(Exiled.API.Enums.EffectType.Invisible);
-            Server.ExecuteCommand($"/tp {ev.Player.Id} 141.3819 901.46 -462.6135");
+            ev.Player.Position = new Vector3(141.3819f, 901.46f, -462.6135f);
 
             for (int i = 1; i < 7; i++)
             {
@@ -784,7 +834,7 @@ namespace Prison_Life
                 {   if (Wander.Keys.Contains(ev.Player.UserId))
                     {
                         ev.Player.Role.Set(PlayerRoles.RoleTypeId.NtfPrivate, Exiled.API.Enums.SpawnReason.ForceClass, 0);
-                        Server.ExecuteCommand($"/setgroup {ev.Player.Id} swat");
+                        ev.Player.Group = new UserGroup { BadgeText = "S.W.A.T", BadgeColor = "cyan" };
                         ev.Player.AddItem(ev.Pickup.Type);
                     }
                     else
@@ -828,9 +878,9 @@ namespace Prison_Life
             string prison = prison_spots[new System.Random().Next(prison_spots.Length)];
             Server.ExecuteCommand($"/tp {ev.Player.Id} {prison}");
 
-            Server.ExecuteCommand($"/bypass {ev.Player.Id} 0");
-            Server.ExecuteCommand($"/size {ev.Player.Id} 1 1 1");
-            Server.ExecuteCommand($"/setgroup {ev.Player.Id} prison");
+            ev.Player.IsBypassModeEnabled = false;
+            ev.Player.Scale = new Vector3(1f, 1f, 1f);
+            ev.Player.Group = new UserGroup { BadgeText = "수감자", BadgeColor = "orange" };
 
             await Task.Delay(7000);
 
@@ -851,18 +901,18 @@ namespace Prison_Life
             string[] wander_spots = { "99.87569 901.46 -479.4201", "99.79726 901.46 -482.4286", "99.74648 901.46 -485.5341" };
             string wander = wander_spots[new System.Random().Next(wander_spots.Length)];
             Server.ExecuteCommand($"/tp {ev.Player.Id} {wander}");
-            Server.ExecuteCommand($"/bypass {ev.Player.Id} 1");
-            Server.ExecuteCommand($"/size {ev.Player.Id} 1 1 1");
-            Server.ExecuteCommand($"/setgroup {ev.Player.Id} warden");
+
+            ev.Player.IsBypassModeEnabled = true;
+            ev.Player.Scale = new Vector3(1f, 1f, 1f);
+            ev.Player.Group = new UserGroup { BadgeText = "교도관", BadgeColor = "silver" };
 
             await Task.Delay(7000);
-
             ev.Player.IsGodModeEnabled = false;
         }
 
         public async void BornFree(Exiled.Events.EventArgs.Player.DyingEventArgs ev)
         {
-            if (UnityEngine.Random.Range(1, 50) == 1)
+            if (UnityEngine.Random.Range(1, 50) == 3)
             {
                 ev.Player.Role.Set(PlayerRoles.RoleTypeId.ChaosRepressor);
                 ev.Player.ClearInventory();
@@ -877,9 +927,10 @@ namespace Prison_Life
                                      "511.518 903.596 -547.4103", "511.5352 903.596 -544.1328", "511.6289 903.596 -540.957" };
                 string free = free_spots[new System.Random().Next(free_spots.Length)];
                 Server.ExecuteCommand($"/tp {ev.Player.Id} {free}");
-                Server.ExecuteCommand($"/bypass {ev.Player.Id} 0");
-                Server.ExecuteCommand($"/size {ev.Player.Id} 1.2 1.1 1.2");
-                Server.ExecuteCommand($"/setgroup {ev.Player.Id} juggernaut");
+
+                ev.Player.IsBypassModeEnabled = false;
+                ev.Player.Scale = new Vector3(1.2f, 1.2f, 1.2f);
+                ev.Player.Group = new UserGroup { BadgeText = "JUGGERNAUT!", BadgeColor = "green" };
 
                 await Task.Delay(7000);
 
@@ -895,9 +946,9 @@ namespace Prison_Life
                                      "511.518 903.596 -547.4103", "511.5352 903.596 -544.1328", "511.6289 903.596 -540.957" };
                 string free = free_spots[new System.Random().Next(free_spots.Length)];
                 Server.ExecuteCommand($"/tp {ev.Player.Id} {free}");
-                Server.ExecuteCommand($"/bypass {ev.Player.Id} 0");
-                Server.ExecuteCommand($"/size {ev.Player.Id} 1 1 1");
-                Server.ExecuteCommand($"/setgroup {ev.Player.Id} free");
+                ev.Player.IsBypassModeEnabled = false;
+                ev.Player.Scale = new Vector3(1f, 1f, 1f);
+                ev.Player.Group = new UserGroup { BadgeText = "범죄자", BadgeColor = "red" };
 
                 await Task.Delay(7000);
 
