@@ -365,12 +365,12 @@ namespace Prison_Life
             while (true)
             {
                 DateTime now = DateTime.Now;
-                if (now.Hour == 0)
+                if (now.Hour == 0 && now.Minute == 0 && now.Second == 0)
                 {
                     Server.ExecuteCommand($"sr");
                 }
 
-                await Task.Delay(3600);
+                await Task.Delay(1000);
             }
         }
 
