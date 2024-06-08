@@ -64,7 +64,7 @@ namespace Prison_Life
 
             if (Physics.Raycast(player.Position, Vector3.down, out RaycastHit hit, 1, (LayerMask)1))
             {
-                string pos = hit.transform.parent.name;
+                string pos = hit.collider.name;
                 string[] cz = { "GuardRoom", "Kitchen", "Yard", "Outside Hole", "Elevator to Outside" };
 
                 if (pos == "SpawnFree")
@@ -253,7 +253,7 @@ namespace Prison_Life
             Instance = this;
 
             Exiled.Events.Handlers.Server.WaitingForPlayers += OnWaitingForPlayers;
-            Exiled.Events.Handlers.Server.RoundStarted += OnRoundStart;
+            Exiled.Events.Handlers.Server.RoundStarted += OnRoundStarted;
 
             Exiled.Events.Handlers.Player.Verified += OnVerifed;
             Exiled.Events.Handlers.Player.DroppedItem += OnDroppedItem;
@@ -262,6 +262,7 @@ namespace Prison_Life
             Exiled.Events.Handlers.Player.ItemAdded += OnItemAdded;
             Exiled.Events.Handlers.Player.FlippingCoin += OnFlippingCoin;
             Exiled.Events.Handlers.Player.ChangingRole += OnChangingRole;
+            Exiled.Events.Handlers.Player.Spawned += OnSpawned;
             Exiled.Events.Handlers.Player.Jumping += Onjumping;
             Exiled.Events.Handlers.Player.Hurting += OnHurting;
             Exiled.Events.Handlers.Player.DroppingAmmo += OnDroppingAmmo;
@@ -278,7 +279,7 @@ namespace Prison_Life
         public override void OnDisabled()
         {
             Exiled.Events.Handlers.Server.WaitingForPlayers -= OnWaitingForPlayers;
-            Exiled.Events.Handlers.Server.RoundStarted -= OnRoundStart;
+            Exiled.Events.Handlers.Server.RoundStarted -= OnRoundStarted;
 
             Exiled.Events.Handlers.Player.Verified -= OnVerifed;
             Exiled.Events.Handlers.Player.DroppedItem -= OnDroppedItem;
@@ -287,6 +288,7 @@ namespace Prison_Life
             Exiled.Events.Handlers.Player.ItemAdded -= OnItemAdded;
             Exiled.Events.Handlers.Player.FlippingCoin -= OnFlippingCoin;
             Exiled.Events.Handlers.Player.ChangingRole -= OnChangingRole;
+            Exiled.Events.Handlers.Player.Spawned -= OnSpawned;
             Exiled.Events.Handlers.Player.Jumping -= Onjumping;
             Exiled.Events.Handlers.Player.Hurting -= OnHurting;
             Exiled.Events.Handlers.Player.DroppingAmmo -= OnDroppingAmmo;
@@ -374,7 +376,7 @@ namespace Prison_Life
             }
         }
 
-        public async void OnRoundStart()
+        public async void OnRoundStarted()
         {
             Server.ExecuteCommand("/mp load PL");
 
@@ -448,6 +450,13 @@ namespace Prison_Life
             Server.ExecuteCommand($"/remotecommand {ev.Player.Id} showtag");
         }
 
+        public async void OnSpawned(Exiled.Events.EventArgs.Player.SpawnedEventArgs ev)
+        {
+            Player.List.ToList().ForEach(x => x.EnableEffect(Exiled.API.Enums.EffectType.FogControl, 0));
+            await Task.Delay(10);
+            Player.List.ToList().ForEach(x => x.EnableEffect(Exiled.API.Enums.EffectType.FogControl, 1));
+        }
+
         public async void OnChangingGroupEventArgs(Exiled.Events.EventArgs.Player.ChangingGroupEventArgs ev)
         {
             await Task.Delay(10);
@@ -466,7 +475,7 @@ namespace Prison_Life
         {
             if (Physics.Raycast(ev.Player.Position, Vector3.down, out RaycastHit hit, 1, (LayerMask)1))
             {
-                if (hit.transform.parent.parent.name == "toilet" && ev.Player.CurrentItem.Type == ItemType.Jailbird)
+                if (hit.transform.parent.name == "toilet" && ev.Player.CurrentItem.Type == ItemType.Jailbird)
                 {
                     if (UnityEngine.Random.Range(1, 20) == 1)
                     {

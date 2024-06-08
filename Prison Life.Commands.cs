@@ -34,5 +34,7 @@ namespace Prison_Life.Commands
 		public string[] Aliases { get; } = Array.Empty<string>();
 
 		public string Description { get; } = "금단의 영역입니다.";
+
+		public bool SanitizeResponse { get; } = true;
 	}
 }
