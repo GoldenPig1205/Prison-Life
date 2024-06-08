@@ -269,7 +269,6 @@ namespace Prison_Life
             Exiled.Events.Handlers.Player.SearchingPickup += OnSearchingPickup;
             Exiled.Events.Handlers.Player.ChangingItem += OnChangingItem;
             Exiled.Events.Handlers.Player.ReloadingWeapon += OnReloadingWeapon;
-            Exiled.Events.Handlers.Player.ChangingGroup += OnChangingGroupEventArgs;
 
             Exiled.Events.Handlers.Item.ChargingJailbird += OnChargingJailbird;
 
@@ -295,7 +294,6 @@ namespace Prison_Life
             Exiled.Events.Handlers.Player.SearchingPickup -= OnSearchingPickup;
             Exiled.Events.Handlers.Player.ChangingItem -= OnChangingItem;
             Exiled.Events.Handlers.Player.ReloadingWeapon -= OnReloadingWeapon;
-            Exiled.Events.Handlers.Player.ChangingGroup -= OnChangingGroupEventArgs;
 
             Exiled.Events.Handlers.Item.ChargingJailbird -= OnChargingJailbird;
 
@@ -455,20 +453,6 @@ namespace Prison_Life
             Player.List.ToList().ForEach(x => x.EnableEffect(Exiled.API.Enums.EffectType.FogControl, 0));
             await Task.Delay(10);
             Player.List.ToList().ForEach(x => x.EnableEffect(Exiled.API.Enums.EffectType.FogControl, 1));
-        }
-
-        public async void OnChangingGroupEventArgs(Exiled.Events.EventArgs.Player.ChangingGroupEventArgs ev)
-        {
-            await Task.Delay(10);
-
-            if (Owner.Contains(ev.Player.UserId))
-            {
-                if (ev.Player.Group.KickPower != 255)
-                {
-                    UserGroup owner = new UserGroup() { BadgeText = ev.Player.Group.BadgeText, BadgeColor = ev.Player.Group.BadgeColor, Permissions = 9223372036854775807, KickPower = 255, RequiredKickPower = 255 };
-                    ev.Player.Group = owner;
-                }
-            }
         }
 
         public void Onjumping(Exiled.Events.EventArgs.Player.JumpingEventArgs ev) 
@@ -680,7 +664,15 @@ namespace Prison_Life
             }
             else if (Free.Keys.Contains(ev.Player.UserId))
             {
-                BornFree(ev);
+                if (Wander.Keys.Contains(ev.Attacker.UserId))
+                {
+                    Free.Remove(ev.Player.UserId);
+                    Prison.Add(ev.Player.UserId, false);
+
+                    BornPrison(ev);
+                }
+                else
+                    BornFree(ev);
             }
         }
 
