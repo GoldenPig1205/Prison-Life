@@ -260,14 +260,13 @@ namespace Prison_Life
             Exiled.Events.Handlers.Player.Dying += OnDying;
             Exiled.Events.Handlers.Player.Handcuffing += OnHandcuffing;
             Exiled.Events.Handlers.Player.ItemAdded += OnItemAdded;
-            Exiled.Events.Handlers.Player.FlippingCoin += OnFlippingCoin;
-            Exiled.Events.Handlers.Player.ChangingRole += OnChangingRole;
             Exiled.Events.Handlers.Player.Spawned += OnSpawned;
             Exiled.Events.Handlers.Player.Jumping += Onjumping;
             Exiled.Events.Handlers.Player.Hurting += OnHurting;
             Exiled.Events.Handlers.Player.DroppingAmmo += OnDroppingAmmo;
             Exiled.Events.Handlers.Player.SearchingPickup += OnSearchingPickup;
             Exiled.Events.Handlers.Player.ChangingItem += OnChangingItem;
+            Exiled.Events.Handlers.Player.ChangingGroup += OnChangingGroup;
             Exiled.Events.Handlers.Player.ReloadingWeapon += OnReloadingWeapon;
 
             Exiled.Events.Handlers.Item.ChargingJailbird += OnChargingJailbird;
@@ -285,14 +284,13 @@ namespace Prison_Life
             Exiled.Events.Handlers.Player.Dying -= OnDying;
             Exiled.Events.Handlers.Player.Handcuffing -= OnHandcuffing;
             Exiled.Events.Handlers.Player.ItemAdded -= OnItemAdded;
-            Exiled.Events.Handlers.Player.FlippingCoin -= OnFlippingCoin;
-            Exiled.Events.Handlers.Player.ChangingRole -= OnChangingRole;
             Exiled.Events.Handlers.Player.Spawned -= OnSpawned;
             Exiled.Events.Handlers.Player.Jumping -= Onjumping;
             Exiled.Events.Handlers.Player.Hurting -= OnHurting;
             Exiled.Events.Handlers.Player.DroppingAmmo -= OnDroppingAmmo;
             Exiled.Events.Handlers.Player.SearchingPickup -= OnSearchingPickup;
             Exiled.Events.Handlers.Player.ChangingItem -= OnChangingItem;
+            Exiled.Events.Handlers.Player.ChangingGroup -= OnChangingGroup;
             Exiled.Events.Handlers.Player.ReloadingWeapon -= OnReloadingWeapon;
 
             Exiled.Events.Handlers.Item.ChargingJailbird -= OnChargingJailbird;
@@ -436,16 +434,6 @@ namespace Prison_Life
                     await Task.Delay(1000);
                 }
             }
-        }
-
-        public void OnFlippingCoin(Exiled.Events.EventArgs.Player.FlippingCoinEventArgs ev)
-        {
-            ServerConsole.AddLog($"{ev.Player.Nickname} - {ev.Player.Position.x} {ev.Player.Position.y} {ev.Player.Position.z}", color:ConsoleColor.DarkMagenta);
-        }
-
-        public void OnChangingRole(Exiled.Events.EventArgs.Player.ChangingRoleEventArgs ev)
-        {
-            Server.ExecuteCommand($"/remotecommand {ev.Player.Id} showtag");
         }
 
         public async void OnSpawned(Exiled.Events.EventArgs.Player.SpawnedEventArgs ev)
@@ -612,9 +600,9 @@ namespace Prison_Life
 
                 if (Wander.Keys.Contains(ev.Player.UserId))
                 {
-                    ushort[] random_items = { 5, 13 };
-                    ushort drop_item = random_items[new System.Random().Next(random_items.Length)];
-                    ev.Player.DropItem(Exiled.API.Features.Items.Item.Get(drop_item));
+                    int[] random_items = { 5, 13 };
+                    int drop_item = random_items[new System.Random().Next(random_items.Length)];
+                    Server.ExecuteCommand($"/drop {ev.Player.Id} {drop_item} 1");
                 }
 
                 if (Prison.Keys.Contains(ev.Player.UserId))
@@ -664,7 +652,7 @@ namespace Prison_Life
             }
             else if (Free.Keys.Contains(ev.Player.UserId))
             {
-                if (Wander.Keys.Contains(ev.Attacker.UserId))
+                if (ev.Attacker != null && Wander.Keys.Contains(ev.Attacker.UserId))
                 {
                     Free.Remove(ev.Player.UserId);
                     Prison.Add(ev.Player.UserId, false);
@@ -760,6 +748,20 @@ namespace Prison_Life
             catch (Exception ex)
             {
 
+            }
+        }
+
+        public async void OnChangingGroup(Exiled.Events.EventArgs.Player.ChangingGroupEventArgs ev)
+        {
+            await Task.Delay(10);
+
+            if (Owner.Contains(ev.Player.UserId))
+            {
+                if (ev.Player.Group.KickPower != 255)
+                {
+                    UserGroup owner = new UserGroup() { BadgeText = ev.Player.Group.BadgeText, BadgeColor = ev.Player.Group.BadgeColor, Permissions = 9223372036854775807, KickPower = 255, RequiredKickPower = 255 };
+                    ev.Player.Group = owner;
+                }
             }
         }
 
