@@ -255,7 +255,7 @@ namespace Prison_Life
             Exiled.Events.Handlers.Server.WaitingForPlayers += OnWaitingForPlayers;
             Exiled.Events.Handlers.Server.RoundStarted += OnRoundStarted;
 
-            Exiled.Events.Handlers.Player.Verified += OnVerifed;
+            Exiled.Events.Handlers.Player.Verified += OnVerified;
             Exiled.Events.Handlers.Player.DroppedItem += OnDroppedItem;
             Exiled.Events.Handlers.Player.Dying += OnDying;
             Exiled.Events.Handlers.Player.Handcuffing += OnHandcuffing;
@@ -279,7 +279,7 @@ namespace Prison_Life
             Exiled.Events.Handlers.Server.WaitingForPlayers -= OnWaitingForPlayers;
             Exiled.Events.Handlers.Server.RoundStarted -= OnRoundStarted;
 
-            Exiled.Events.Handlers.Player.Verified -= OnVerifed;
+            Exiled.Events.Handlers.Player.Verified -= OnVerified;
             Exiled.Events.Handlers.Player.DroppedItem -= OnDroppedItem;
             Exiled.Events.Handlers.Player.Dying -= OnDying;
             Exiled.Events.Handlers.Player.Handcuffing -= OnHandcuffing;
@@ -404,31 +404,36 @@ namespace Prison_Life
             ev.IsAllowed = false;
         }
 
-        public async void OnVerifed(Exiled.Events.EventArgs.Player.VerifiedEventArgs ev)
+        public void OnVerified(Exiled.Events.EventArgs.Player.VerifiedEventArgs ev)
         {
-            if (Wander.Keys.Contains(ev.Player.UserId) || Prison.Keys.Contains(ev.Player.UserId) || Free.Keys.Contains(ev.Player.UserId))
+            Verified(ev.Player);
+        }
+
+        public async void Verified(Player player)
+        {
+            if (Wander.Keys.Contains(player.UserId) || Prison.Keys.Contains(player.UserId) || Free.Keys.Contains(player.UserId))
             {
-                ev.Player.Kill("곧 재생성됩니다, 준비하세요!");
+                player.Kill("곧 재생성됩니다, 준비하세요!");
             }
             else
             {
-                gtool.hits.Add(new Hit { player = ev.Player });
-                HealingCooldown.Add(ev.Player.UserId, 0);
+                gtool.hits.Add(new Hit { player = player });
+                HealingCooldown.Add(player.UserId, 0);
 
-                ev.Player.Role.Set(PlayerRoles.RoleTypeId.Tutorial);
-                ev.Player.EnableEffect(Exiled.API.Enums.EffectType.Invisible);
-                ev.Player.Position = new Vector3(142.3191f, 901.505f, -462.5307f);
-                ev.Player.Group = new UserGroup { BadgeText = "중립", BadgeColor = "white" };
+                player.Role.Set(PlayerRoles.RoleTypeId.Tutorial);
+                player.EnableEffect(Exiled.API.Enums.EffectType.Invisible);
+                player.Position = new Vector3(142.3191f, 901.505f, -462.5307f);
+                player.Group = new UserGroup { BadgeText = "중립", BadgeColor = "white" };
 
-                ev.Player.ShowHint($"<b><size=40><size=50>[<color=#A4A4A4>교도관</color>]</size>\n<mark=#A4A4A4aa>수감자들을 잘 감시하세요. 불법 반입 물품 압수, 폭동 진압, 무엇보다도 탈옥 시도를 저지해야 합니다. 하지만 감옥을 위협하는 것이 죄수뿐만은 아니라는 것, 명심하세요.</mark>\n\n" +
+                player.ShowHint($"<b><size=40><size=50>[<color=#A4A4A4>교도관</color>]</size>\n<mark=#A4A4A4aa>수감자들을 잘 감시하세요. 불법 반입 물품 압수, 폭동 진압, 무엇보다도 탈옥 시도를 저지해야 합니다. 하지만 감옥을 위협하는 것이 죄수뿐만은 아니라는 것, 명심하세요.</mark>\n\n" +
                     $"<size=50>[<color=#FF8000>수감자</color>]</size>\n<mark=#FF8000aa>가석방이 없는 종신형을 받은 무고한 시민인 당신, 어떤 희망도 미래도 보이지 않습니다. 지금 당신은 갈림길에 서있습니다. 평생 추운 감옥에 갇혀 의미 없는 나날을 보낼 것인가, 아니면 탈옥할 것인가...</mark></size></b>\n\n\n" +
                     $"<color=#A4A4A4>교도관</color>으로 플레이하려면 <mark=#0080FFaa><color=#000000>파란색 발판</color></mark>을,\n<color=#FF8000>수감자</color>로 플레이하려면 <mark=#FF8000aa><color=#000000>주황색 발판</color></mark>을 밟으십시오.\n\n\n\n\n\n\n\n\n\n", 10000);
 
                 while (true)
                 {
-                    if (ev.Player.Role.Type != PlayerRoles.RoleTypeId.Tutorial)
+                    if (player.Role.Type != PlayerRoles.RoleTypeId.Tutorial)
                     {
-                        ev.Player.ShowHint("", 1);
+                        player.ShowHint("", 1);
                         break;
                     }
                     await Task.Delay(1000);
