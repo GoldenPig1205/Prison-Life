@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Exiled.API.Features;
-using Exiled.Events.EventArgs.Player;
 using UnityEngine;
 using PlayerRoles.FirstPersonControl;
 using MEC;
@@ -260,7 +259,6 @@ namespace Prison_Life
             Exiled.Events.Handlers.Player.Dying += OnDying;
             Exiled.Events.Handlers.Player.Handcuffing += OnHandcuffing;
             Exiled.Events.Handlers.Player.ItemAdded += OnItemAdded;
-            Exiled.Events.Handlers.Player.Spawned += OnSpawned;
             Exiled.Events.Handlers.Player.Jumping += Onjumping;
             Exiled.Events.Handlers.Player.Hurting += OnHurting;
             Exiled.Events.Handlers.Player.DroppingAmmo += OnDroppingAmmo;
@@ -284,7 +282,6 @@ namespace Prison_Life
             Exiled.Events.Handlers.Player.Dying -= OnDying;
             Exiled.Events.Handlers.Player.Handcuffing -= OnHandcuffing;
             Exiled.Events.Handlers.Player.ItemAdded -= OnItemAdded;
-            Exiled.Events.Handlers.Player.Spawned -= OnSpawned;
             Exiled.Events.Handlers.Player.Jumping -= Onjumping;
             Exiled.Events.Handlers.Player.Hurting -= OnHurting;
             Exiled.Events.Handlers.Player.DroppingAmmo -= OnDroppingAmmo;
@@ -439,13 +436,6 @@ namespace Prison_Life
                     await Task.Delay(1000);
                 }
             }
-        }
-
-        public async void OnSpawned(Exiled.Events.EventArgs.Player.SpawnedEventArgs ev)
-        {
-            Player.List.ToList().ForEach(x => x.EnableEffect(Exiled.API.Enums.EffectType.FogControl, 0));
-            await Task.Delay(10);
-            Player.List.ToList().ForEach(x => x.EnableEffect(Exiled.API.Enums.EffectType.FogControl, 1));
         }
 
         public void Onjumping(Exiled.Events.EventArgs.Player.JumpingEventArgs ev) 
